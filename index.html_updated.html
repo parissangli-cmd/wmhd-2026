@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WMHD 2026 Mental Health App</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #2e7d32;
+            --secondary: #81c784;
+            --bg: #f4f9f4;
+            --card-bg: #ffffff;
+            --text: #333333;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        header {
+            width: 100%;
+            background-color: var(--primary);
+            color: white;
+            padding: 15px 10px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        .lang-selector {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 5px;
+            border-radius: 5px;
+            border: none;
+            font-weight: bold;
+        }
+        header h1 { margin: 0; font-size: 20px; padding-top: 20px; }
+        header p { margin: 5px 0 0 0; font-size: 13px; font-weight: normal; opacity: 0.9; }
+        
+        .container { width: 100%; max-width: 650px; padding: 20px; box-sizing: border-box; flex: 1; }
+        .card { background: var(--card-bg); border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 20px; }
+        
+        label { font-weight: bold; display: block; margin-bottom: 8px; margin-top: 15px; }
+        input[type="text"], input[type="tel"], input[type="email"], select {
+            width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; box-sizing: border-box; outline: none;
+        }
+        input:focus, select:focus { border-color: var(--primary); }
+        
+        .btn { width: 100%; padding: 15px; font-size: 16px; font-weight: bold; color: white; background: var(--primary); border: none; border-radius: 10px; margin-top: 25px; cursor: pointer; transition: 0.3s; }
+        .btn:hover { background: #1b5e20; }
+        
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-group .btn { margin-top: 0; background: #1565c0; }
+        .btn-group .btn:hover { background: #0d47a1; }
+        
+        #quiz-screen, #result-screen { display: none; }
+        .question-title { font-size: 18px; font-weight: 600; margin-bottom: 20px; line-height: 1.5; color: var(--primary); }
+        .option-btn { display: block; width: 100%; padding: 15px; margin-bottom: 12px; font-size: 16px; border: 2px solid #e0e0e0; border-radius: 10px; background: white; cursor: pointer; text-align: left; transition: 0.2s; }
+        .option-btn.selected { background: #e8f5e9; border-color: var(--primary); font-weight: bold; }
+        .progress { text-align: center; font-weight: bold; margin-bottom: 15px; color: gray; }
+        #cert-canvas { display: none; max-width: 100%; height: auto; margin-top: 20px; border: 2px solid #ccc; border-radius: 8px; }
+        .score { font-size: 36px; font-weight: bold; color: var(--primary); }
+    </style>
+    <!-- येथे external JS फाईल जोडली आहे -->
+    <script src="questions.js"></script>
+</head>
+<body>
+
+    <header>
+        <select class="lang-selector" id="lang-select" onchange="changeLang()">
+            <option value="mr">मराठी</option>
+            <option value="en">English</option>
+            <option value="hi">हिंदी</option>
+        </select>
+        <h1 id="header-title">जागतिक मानसिक आरोग्य दिन २०२६</h1>
+        <p id="header-theme">थीम: खरे अनुभव, खरे आवाज: खऱ्या बदलासाठी</p>
+    </header>
+
+    <div class="container">
+        
+        <div id="login-screen" class="card">
+            <h2 id="welcome-title" style="text-align:center; color: var(--primary);">सत्रात आपले स्वागत आहे!</h2>
+            
+            <label id="lbl-name">तुमचे संपूर्ण नाव:</label>
+            <input type="text" id="user-name" required>
+            
+            <label id="lbl-mobile">मोबाईल नंबर:</label>
+            <input type="tel" id="user-mobile" maxlength="10" required>
+            
+            <label id="lbl-email">ईमेल ॲड्रेस (Email):</label>
+            <input type="email" id="user-email" required>
+            
+            <label id="lbl-role">तुम्ही कोण आहात?</label>
+            <select id="user-role" required>
+                <option value="" id="opt-select">-- कृपया निवडा --</option>
+                <option value="Student" id="opt-student">विद्यार्थी</option>
+                <option value="Teacher" id="opt-teacher">शिक्षक</option>
+                <option value="Parent" id="opt-parent">पालक</option>
+            </select>
+            
+            <button class="btn" id="btn-start" onclick="startQuiz()">सुरू करा ➔</button>
+        </div>
+
+        <div id="quiz-screen" class="card">
+            <div class="progress"><span id="lbl-q">प्रश्न</span> <span id="q-current">1</span> / <span id="q-total">40</span></div>
+            <div class="question-title" id="question-text">Question</div>
+            <div id="options-container"></div>
+            <button class="btn" id="next-btn" style="display:none;" onclick="nextQuestion()">पुढील प्रश्न ➔</button>
+        </div>
+
+        <div id="result-screen" class="card" style="text-align:center;">
+            <h2 style="color:var(--primary);"><span id="lbl-congrats">अभिनंदन</span>, <span id="res-name"></span>!</h2>
+            <p id="lbl-completion">तुम्ही हा मानसिक आरोग्य सराव यशस्वीरीत्या पूर्ण केला आहे.</p>
+            <div class="score"><span id="lbl-score">गुण</span>: <span id="res-score">0</span> / <span id="res-total">0</span></div>
+            <p id="saving-msg" style="color: #e65100; font-weight: bold;"></p>
+            
+            <div class="btn-group" id="download-btns" style="display:none;">
+                <button class="btn" onclick="downloadCert('img')">Download Image (PNG)</button>
+                <button class="btn" onclick="downloadCert('pdf')">Download PDF</button>
+            </div>
+            
+            <canvas id="cert-canvas" width="1000" height="700"></canvas>
+            <img id="paris-logo" src="IMG-20220407-WA0014.jpg" style="display:none;" crossorigin="anonymous">
+        </div>
+
+    </div>
+
+    <script>
+        // ----------------------------------------------------
+        // १. येथे तुमची Google Apps Script ची Web App URL टाका
+        // ----------------------------------------------------
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzOQW-9yRgJxVnXoYKTWo_lktQslEywjFUh8w3t6YDUuWVe-8zkS6jKvLsal7El6e7jyA/exec";
+        
+        const translations = {
+            "mr": {
+                "title": "जागतिक मानसिक आरोग्य दिन २०२६",
+                "theme": "थीम: खरे अनुभव, खरे आवाज: खऱ्या बदलासाठी",
+                "welcome": "सत्रात आपले स्वागत आहे!",
+                "name": "तुमचे संपूर्ण नाव:",
+                "mobile": "मोबाईल नंबर:",
+                "email": "ईमेल ॲड्रेस:",
+                "role": "तुम्ही कोण आहात?",
+                "select": "-- कृपया निवडा --",
+                "student": "विद्यार्थी",
+                "teacher": "शिक्षक",
+                "parent": "पालक",
+                "start": "सुरू करा ➔",
+                "q": "प्रश्न",
+                "next": "पुढील प्रश्न ➔",
+                "congrats": "अभिनंदन",
+                "completion": "तुम्ही हा मानसिक आरोग्य सराव यशस्वीरीत्या पूर्ण केला आहे.",
+                "score": "गुण",
+                "saving": "तुमचा निकाल सेव्ह होत आहे...",
+                "saved": "✓ माहिती यशस्वीरीत्या सेव्ह झाली!",
+                "err": "माहिती सेव्ह झाली, प्रमाणपत्र तयार आहे.",
+                "cert_title": "प्रमाणपत्र (Certificate of Participation)",
+                "cert_body": "प्रमाणित करण्यात येते की,",
+                "cert_desc": "यांनी '{role}' गटांतर्गत मानसिक आरोग्य सराव पूर्ण करून {score}/40 गुण मिळवले आहेत."
+            },
+            "en": {
+                "title": "World Mental Health Day 2026",
+                "theme": "Theme: Lived Experiences Heard: Real Voices, Real Change",
+                "welcome": "Welcome to the Session!",
+                "name": "Your Full Name:",
+                "mobile": "Mobile Number:",
+                "email": "Email Address:",
+                "role": "Who are you?",
+                "select": "-- Please Select --",
+                "student": "Student",
+                "teacher": "Teacher",
+                "parent": "Parent",
+                "start": "Start ➔",
+                "q": "Question",
+                "next": "Next Question ➔",
+                "congrats": "Congratulations",
+                "completion": "You have successfully completed this mental health exercise.",
+                "score": "Score",
+                "saving": "Saving your result...",
+                "saved": "✓ Information saved successfully!",
+                "err": "Information saved, certificate is ready.",
+                "cert_title": "Certificate of Participation",
+                "cert_body": "This is to certify that",
+                "cert_desc": "has completed the mental health exercise under the '{role}' category and scored {score}/40."
+            },
+            "hi": {
+                "title": "विश्व मानसिक स्वास्थ्य दिवस 2026",
+                "theme": "थीम: जीवंत अनुभव: वास्तविक आवाज, वास्तविक बदलाव",
+                "welcome": "सत्र में आपका स्वागत है!",
+                "name": "आपका पूरा नाम:",
+                "mobile": "मोबाइल नंबर:",
+                "email": "ईमेल पता:",
+                "role": "आप कौन हैं?",
+                "select": "-- कृपया चुनें --",
+                "student": "छात्र",
+                "teacher": "शिक्षक",
+                "parent": "माता-पिता",
+                "start": "शुरू करें ➔",
+                "q": "प्रश्न",
+                "next": "अगला प्रश्न ➔",
+                "congrats": "बधाई हो",
+                "completion": "आपने इस मानसिक स्वास्थ्य अभ्यास को सफलतापूर्वक पूरा कर लिया है।",
+                "score": "अंक",
+                "saving": "आपका परिणाम सहेजा जा रहा है...",
+                "saved": "✓ जानकारी सफलतापूर्वक सहेजी गई!",
+                "err": "जानकारी सहेजी गई, प्रमाणपत्र तैयार है।",
+                "cert_title": "प्रमाणपत्र (Certificate of Participation)",
+                "cert_body": "प्रमाणित किया जाता है कि,",
+                "cert_desc": "इन्होंने '{role}' श्रेणी के तहत मानसिक स्वास्थ्य अभ्यास पूरा किया और {score}/40 अंक प्राप्त किए।"
+            }
+        };
+
+        let lang = "mr";
+        let currentUser = {};
+        let currentQuestions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let selectedOptionIndex = -1;
+
+        function changeLang() {
+            lang = document.getElementById("lang-select").value;
+            let t = translations[lang];
+            
+            document.getElementById("header-title").innerText = t.title;
+            document.getElementById("header-theme").innerText = t.theme;
+            document.getElementById("welcome-title").innerText = t.welcome;
+            document.getElementById("lbl-name").innerText = t.name;
+            document.getElementById("lbl-mobile").innerText = t.mobile;
+            document.getElementById("lbl-email").innerText = t.email;
+            document.getElementById("lbl-role").innerText = t.role;
+            document.getElementById("opt-select").innerText = t.select;
+            document.getElementById("opt-student").innerText = t.student;
+            document.getElementById("opt-teacher").innerText = t.teacher;
+            document.getElementById("opt-parent").innerText = t.parent;
+            document.getElementById("btn-start").innerText = t.start;
+            document.getElementById("lbl-q").innerText = t.q;
+            document.getElementById("next-btn").innerText = t.next;
+            document.getElementById("lbl-congrats").innerText = t.congrats;
+            document.getElementById("lbl-completion").innerText = t.completion;
+            document.getElementById("lbl-score").innerText = t.score;
+            
+            if(document.getElementById("quiz-screen").style.display === "block") {
+                loadQuestionUI();
+            }
+        }
+
+        function startQuiz() {
+            let name = document.getElementById("user-name").value.trim();
+            let mobile = document.getElementById("user-mobile").value.trim();
+            let email = document.getElementById("user-email").value.trim();
+            let role = document.getElementById("user-role").value;
+
+            if (!name || !mobile || !email || !role) { alert("Please fill all details."); return; }
+            if (mobile.length !== 10) { alert("Please enter valid 10 digit mobile number."); return; }
+            if (typeof questionsDB === 'undefined') { alert("Questions database not loaded. Check questions.js file."); return; }
+
+            currentUser = { name, mobile, email, role };
+            currentQuestions = questionsDB[role];
+            currentQuestionIndex = 0;
+            score = 0;
+            
+            document.getElementById("login-screen").style.display = "none";
+            document.getElementById("quiz-screen").style.display = "block";
+            document.getElementById("q-total").innerText = currentQuestions.length;
+            loadQuestionUI();
+        }
+
+        function loadQuestionUI() {
+            selectedOptionIndex = -1;
+            document.getElementById("next-btn").style.display = "none";
+            document.getElementById("q-current").innerText = currentQuestionIndex + 1;
+            
+            let qData = currentQuestions[currentQuestionIndex][lang];
+            document.getElementById("question-text").innerText = qData.q;
+            
+            let optsContainer = document.getElementById("options-container");
+            optsContainer.innerHTML = "";
+            
+            qData.options.forEach((opt, index) => {
+                let btn = document.createElement("button");
+                btn.className = "option-btn";
+                btn.innerText = opt;
+                btn.onclick = () => {
+                    selectedOptionIndex = index;
+                    document.querySelectorAll(".option-btn").forEach(b => b.classList.remove("selected"));
+                    btn.classList.add("selected");
+                    document.getElementById("next-btn").style.display = "block";
+                };
+                optsContainer.appendChild(btn);
+            });
+        }
+
+        function nextQuestion() {
+            if (selectedOptionIndex === currentQuestions[currentQuestionIndex][lang].ans) score++;
+            currentQuestionIndex++;
+            if (currentQuestionIndex < currentQuestions.length) loadQuestionUI();
+            else showResults();
+        }
+
+        function showResults() {
+            document.getElementById("quiz-screen").style.display = "none";
+            document.getElementById("result-screen").style.display = "block";
+            
+            document.getElementById("res-name").innerText = currentUser.name;
+            document.getElementById("res-score").innerText = score;
+            document.getElementById("res-total").innerText = currentQuestions.length;
+            
+            document.getElementById("saving-msg").innerText = translations[lang].saving;
+            
+            saveToGoogleSheet();
+        }
+
+        function saveToGoogleSheet() {
+            let formData = new URLSearchParams();
+            formData.append("Name", currentUser.name);
+            formData.append("Mobile", currentUser.mobile);
+            formData.append("Email", currentUser.email);
+            formData.append("Role", currentUser.role);
+            formData.append("Score", score + "/" + currentQuestions.length);
+
+            fetch(GOOGLE_SCRIPT_URL, { method: "POST", body: formData, mode: 'no-cors' })
+            .then(() => {
+                document.getElementById("saving-msg").style.color = "green";
+                document.getElementById("saving-msg").innerText = translations[lang].saved;
+                generateCertificateCanvas();
+            }).catch(err => {
+                document.getElementById("saving-msg").style.color = "green";
+                document.getElementById("saving-msg").innerText = translations[lang].err;
+                generateCertificateCanvas();
+            });
+        }
+
+        function generateCertificateCanvas() {
+            const canvas = document.getElementById('cert-canvas');
+            const ctx = canvas.getContext('2d');
+            const logo = document.getElementById('paris-logo');
+            let t = translations[lang];
+            
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Decorative Borders
+            ctx.strokeStyle = "#1b5e20";
+            ctx.lineWidth = 15;
+            ctx.strokeRect(15, 15, canvas.width - 30, canvas.height - 30);
+            ctx.strokeStyle = "#4caf50";
+            ctx.lineWidth = 5;
+            ctx.strokeRect(35, 35, canvas.width - 70, canvas.height - 70);
+
+            // Background pattern (light)
+            ctx.fillStyle = "rgba(129, 199, 132, 0.05)";
+            ctx.fillRect(40, 40, canvas.width - 80, canvas.height - 80);
+
+            // Draw Logo (Bigger)
+            if(logo.complete && logo.naturalHeight !== 0) {
+                ctx.drawImage(logo, 60, 50, 160, 160);
+            }
+
+            // Texts
+            ctx.fillStyle = "#1b5e20";
+            ctx.font = "bold 42px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(t.cert_title, canvas.width/2, 110);
+            
+            ctx.fillStyle = "#333";
+            ctx.font = "24px sans-serif";
+            ctx.fillText(t.title, canvas.width/2, 160);
+            
+            ctx.fillStyle = "#d32f2f";
+            ctx.font = "italic 22px sans-serif";
+            ctx.fillText(t.theme, canvas.width/2, 200);
+            
+            ctx.fillStyle = "#333";
+            ctx.font = "26px sans-serif";
+            ctx.fillText(t.cert_body, canvas.width/2, 280);
+            
+            // Name
+            ctx.fillStyle = "#2e7d32";
+            ctx.font = "bold 55px sans-serif";
+            ctx.fillText(currentUser.name, canvas.width/2, 350);
+            
+            ctx.beginPath();
+            ctx.moveTo(canvas.width/2 - 250, 370);
+            ctx.lineTo(canvas.width/2 + 250, 370);
+            ctx.strokeStyle = "#2e7d32";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Role and Score logic
+            let roleText = translations[lang][currentUser.role.toLowerCase()];
+            let desc = t.cert_desc.replace("{role}", roleText).replace("{score}", score);
+            
+            ctx.fillStyle = "#333";
+            ctx.font = "22px sans-serif";
+            ctx.fillText(desc, canvas.width/2, 430);
+
+            // Add PARIS Foundation details under the score
+            ctx.fillStyle = "#1b5e20";
+            ctx.font = "bold 22px sans-serif";
+            ctx.fillText("PARIS (परिस) Foundation", canvas.width/2, 480);
+            
+            ctx.fillStyle = "#555";
+            ctx.font = "italic 18px sans-serif";
+            ctx.fillText("Psycho-socio-educational Activities for Realisation and Implosive Services", canvas.width/2, 505);
+
+            // Signatures
+            ctx.textAlign = "left";
+            ctx.fillStyle = "#000000";
+            ctx.font = "italic 40px 'Brush Script MT', 'Lucida Handwriting', cursive";
+            ctx.fillText("Ajit Patil", 150, 580);
+            
+            ctx.fillStyle = "#333";
+            ctx.font = "bold 18px sans-serif";
+            ctx.fillText("डॉ. अजित पाटील", 150, 615);
+            ctx.font = "16px sans-serif";
+            ctx.fillText("मानसतज्ज्ञ, अध्यक्ष,", 150, 640);
+            ctx.fillText("PARIS Foundation", 150, 665);
+            
+            // Date
+            let today = new Date().toLocaleDateString('en-GB');
+            ctx.textAlign = "center";
+            ctx.font = "20px sans-serif";
+            ctx.fillText(today, 800, 580);
+            ctx.beginPath();
+            ctx.moveTo(720, 595);
+            ctx.lineTo(880, 595);
+            ctx.stroke();
+            ctx.fillText("Date", 800, 625);
+            
+            document.getElementById("download-btns").style.display = "flex";
+            document.getElementById("download-btns").style.justifyContent = "center";
+            canvas.style.display = "block";
+            canvas.style.margin = "20px auto";
+        }
+        
+        function downloadCert(type) {
+            const canvas = document.getElementById('cert-canvas');
+            if(type === 'img') {
+                let link = document.createElement('a');
+                link.download = `Certificate_${currentUser.name}.png`;
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+            } else if(type === 'pdf') {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'px',
+                    format: [canvas.width, canvas.height]
+                });
+                const imgData = canvas.toDataURL('image/png');
+                doc.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+                doc.save(`Certificate_${currentUser.name}.pdf`);
+            }
+        }
+    </script>
+</body>
+</html>
