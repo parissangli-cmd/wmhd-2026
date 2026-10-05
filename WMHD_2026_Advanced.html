@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>World Mental Health Day 2026 Quiz</title>
+    <style>
+        :root {
+            --primary: #2e7d32;
+            --secondary: #81c784;
+            --bg: #f1f8e9;
+            --card-bg: #ffffff;
+            --text: #333333;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        header {
+            width: 100%;
+            background-color: var(--primary);
+            color: white;
+            padding: 20px 10px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        header h1 { margin: 0; font-size: 22px; }
+        header p { margin: 5px 0 0 0; font-size: 14px; font-weight: normal; opacity: 0.9; }
+        
+        .container {
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+            box-sizing: border-box;
+            flex: 1;
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        
+        label { font-weight: bold; display: block; margin-bottom: 8px; margin-top: 15px; }
+        input[type="text"], input[type="tel"], input[type="email"], select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+            outline: none;
+        }
+        input:focus, select:focus { border-color: var(--primary); }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            background: var(--primary);
+            border: none;
+            border-radius: 10px;
+            margin-top: 25px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .btn:hover { background: #1b5e20; }
+        .btn:disabled { background: #a5d6a7; cursor: not-allowed; }
+        
+        #quiz-screen, #result-screen { display: none; }
+        .question-title { font-size: 18px; font-weight: 600; margin-bottom: 20px; line-height: 1.5; color: var(--primary); }
+        .option-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 12px;
+            font-size: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+            text-align: left;
+            transition: 0.2s;
+        }
+        .option-btn.selected { background: #e8f5e9; border-color: var(--primary); font-weight: bold; }
+        .progress { text-align: center; font-weight: bold; margin-bottom: 15px; color: gray; }
+        #cert-canvas { display: none; max-width: 100%; height: auto; margin-top: 20px; border: 1px solid #ccc; border-radius: 8px; }
+        .score { font-size: 36px; font-weight: bold; color: var(--primary); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>जागतिक मानसिक आरोग्य दिन २०२६</h1>
+        <p>थीम: खरे अनुभव, खरे आवाज: खऱ्या बदलासाठी</p>
+    </header>
+
+    <div class="container">
+        
+        <div id="login-screen" class="card">
+            <h2 style="text-align:center; color: var(--primary);">सत्रात आपले स्वागत आहे!</h2>
+            
+            <label>तुमचे संपूर्ण नाव:</label>
+            <input type="text" id="user-name" placeholder="उदा. राहुल पाटील" required>
+            
+            <label>मोबाईल नंबर:</label>
+            <input type="tel" id="user-mobile" placeholder="उदा. 9876543210" maxlength="10" required>
+            
+            <label>ईमेल ॲड्रेस (Email):</label>
+            <input type="email" id="user-email" placeholder="उदा. abc@gmail.com" required>
+            
+            <label>तुम्ही कोण आहात?</label>
+            <select id="user-role" required>
+                <option value="">-- कृपया निवडा --</option>
+                <option value="विद्यार्थी">विद्यार्थी (Student)</option>
+                <option value="शिक्षक">शिक्षक (Teacher)</option>
+                <option value="पालक">पालक (Parent)</option>
+            </select>
+            
+            <button class="btn" onclick="startQuiz()">सुरू करा ➔</button>
+        </div>
+
+        <div id="quiz-screen" class="card">
+            <div class="progress">प्रश्न <span id="q-current">1</span> / <span id="q-total">40</span></div>
+            <div class="question-title" id="question-text">प्रश्न येथे दिसेल</div>
+            <div id="options-container"></div>
+            <button class="btn" id="next-btn" style="display:none;" onclick="nextQuestion()">पुढील प्रश्न ➔</button>
+        </div>
+
+        <div id="result-screen" class="card" style="text-align:center;">
+            <h2 style="color:var(--primary);">अभिनंदन, <span id="res-name"></span>!</h2>
+            <p>तुम्ही हा मानसिक आरोग्य सराव यशस्वीरीत्या पूर्ण केला आहे.</p>
+            <div class="score">गुण: <span id="res-score">0</span> / <span id="res-total">0</span></div>
+            <p id="saving-msg" style="color: #e65100; font-weight: bold;">तुमचा निकाल सेव्ह होत आहे, कृपया थांबा...</p>
+            
+            <button class="btn" id="cert-btn" style="display:none;" onclick="downloadCertificate()">प्रमाणपत्र डाऊनलोड करा ⬇</button>
+            <canvas id="cert-canvas" width="800" height="600"></canvas>
+            
+            <!-- Hidden Image element to load the logo -->
+            <img id="paris-logo" src="IMG-20220407-WA0014.jpg" style="display:none;" crossorigin="anonymous">
+        </div>
+
+    </div>
+
+    <script>
+        // ----------------------------------------------------
+        // १. येथे तुमची Google Apps Script ची Web App URL टाका
+        // ----------------------------------------------------
+        const GOOGLE_SCRIPT_URL = "येथे_लिंक_पेस्ट_करा";
+
+        const allQuestions = {
+            "विद्यार्थी": [
+                { q: "जेव्हा तुम्हाला अभ्यासाचा खूप ताण येतो, तेव्हा काय करणे योग्य आहे?", options: ["मित्रांशी किंवा मोठ्यांशी बोलणे", "एकटे राहणे", "रागावून वस्तू फेकणे", "झोपून राहणे"], ans: 0 },
+                { q: "सोशल मीडियाच्या अतिवापरामुळे काय परिणाम होतो?", options: ["फायदा होतो", "ताण व नैराश्य वाढते", "काहीच परिणाम नाही", "झोप चांगली लागते"], ans: 1 },
+                { q: "कोणी तुम्हाला सतत चिडवत असेल तर काय करावे?", options: ["गप्प बसावे", "मारायला जावे", "शिक्षक/पालकांना सांगावे", "शाळेत जाणे टाळावे"], ans: 2 },
+                { q: "'स्वतःच्या भावना ओळखणे' म्हणजे काय?", options: ["दुसऱ्याला दोष देणे", "मला आतून काय वाटतेय ते समजणे", "सतत रागावणे", "दुर्लक्ष करणे"], ans: 1 },
+                { q: "मानसिक आरोग्य उत्तम ठेवण्यासाठी काय करावे?", options: ["मोबाईल पाहणे", "जंक फूड खाणे", "नियमित व्यायाम आणि झोप", "उशिरा झोपणे"], ans: 2 }
+            ],
+            "शिक्षक": [
+                { q: "विद्यार्थी अचानक उदास वाटत असल्यास शिक्षकाने काय करावे?", options: ["सर्वांसमोर शिक्षा करावी", "त्याच्याशी एकांतात विश्वासाने बोलावे", "दुर्लक्ष करावे", "पालकांना ओरडावे"], ans: 1 },
+                { q: "मानसिक स्वास्थ्य चांगले राहण्यासाठी वर्गात कोणते वातावरण असावे?", options: ["भीतीदायक", "कडक शिस्तीचे", "सुरक्षित आणि संवादात्मक", "केवळ अभ्यासावर भर"], ans: 2 },
+                { q: "शिक्षकांना कामाचा मानसिक ताण (Burnout) आल्यास काय करावे?", options: ["राग विद्यार्थ्यांवर काढावा", "व्यावसायिक मदत/विश्रांती घ्यावी", "नोकरी सोडावी", "ताण लपवावा"], ans: 1 },
+                { q: "विद्यार्थ्यांप्रती 'सहानुभूती' दाखवणे म्हणजे काय?", options: ["त्यांच्या दृष्टिकोनातून भावना समजणे", "फक्त कीव करणे", "चुका मान्य करणे", "सल्ले देणे"], ans: 0 },
+                { q: "मुलांमधील नैराश्याचे प्राथमिक लक्षण कोणते?", options: ["उत्साही असणे", "आवडणाऱ्या गोष्टीतून रस कमी होणे", "जास्त अभ्यास करणे", "हसत राहणे"], ans: 1 }
+            ],
+            "पालक": [
+                { q: "मुलाने कमी गुण मिळवल्यास पालकांची प्रतिक्रिया कशी असावी?", options: ["इतरांशी तुलना करणे", "रागावणे", "कारण समजून घेऊन आधार देणे", "बोलणे बंद करणे"], ans: 2 },
+                { q: "चांगल्या मानसिक आरोग्यासाठी पालकांनी काय करावे?", options: ["सतत उपदेश देणे", "गुणवत्तापूर्ण वेळ घालवणे", "चुका लपवणे", "टीव्ही बघू देणे"], ans: 1 },
+                { q: "मुले अचानक आक्रमक होत असतील, तर हे कशाचे लक्षण असू शकते?", options: ["मूळ स्वभाव", "मुद्दाम त्रास देणे", "मनातील लपलेला ताण", "काही विशेष नाही"], ans: 2 },
+                { q: "मोबाईल वापरावर नियंत्रण कसे ठेवावे?", options: ["मोबाईल काढून घेणे", "मारहाण करणे", "संवाद साधून मर्यादा ठरवणे", "लक्ष न देणे"], ans: 2 },
+                { q: "मुलाने समस्या सांगितल्यास पालकांनी आधी काय करावे?", options: ["थेट उपाय सांगणे", "शांतपणे पूर्ण ऐकून घेणे", "त्याला चुकीचे ठरवणे", "दुर्लक्ष करणे"], ans: 1 }
+            ]
+        };
+
+        let currentUser = {};
+        let currentQuestions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let selectedOptionIndex = -1;
+
+        function startQuiz() {
+            let name = document.getElementById("user-name").value.trim();
+            let mobile = document.getElementById("user-mobile").value.trim();
+            let email = document.getElementById("user-email").value.trim();
+            let role = document.getElementById("user-role").value;
+
+            if (!name || !mobile || !email || !role) {
+                alert("कृपया सर्व माहिती भरा."); return;
+            }
+            if (mobile.length !== 10) {
+                alert("कृपया 10 अंकी मोबाईल नंबर टाका."); return;
+            }
+
+            currentUser = { name, mobile, email, role };
+            currentQuestions = allQuestions[role];
+            
+            document.getElementById("login-screen").style.display = "none";
+            document.getElementById("quiz-screen").style.display = "block";
+            document.getElementById("q-total").innerText = currentQuestions.length;
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            selectedOptionIndex = -1;
+            document.getElementById("next-btn").style.display = "none";
+            document.getElementById("q-current").innerText = currentQuestionIndex + 1;
+            
+            let qData = currentQuestions[currentQuestionIndex];
+            document.getElementById("question-text").innerText = qData.q;
+            
+            let optsContainer = document.getElementById("options-container");
+            optsContainer.innerHTML = "";
+            
+            qData.options.forEach((opt, index) => {
+                let btn = document.createElement("button");
+                btn.className = "option-btn";
+                btn.innerText = opt;
+                btn.onclick = () => {
+                    selectedOptionIndex = index;
+                    document.querySelectorAll(".option-btn").forEach(b => b.classList.remove("selected"));
+                    btn.classList.add("selected");
+                    document.getElementById("next-btn").style.display = "block";
+                };
+                optsContainer.appendChild(btn);
+            });
+        }
+
+        function nextQuestion() {
+            if (selectedOptionIndex === currentQuestions[currentQuestionIndex].ans) score++;
+            currentQuestionIndex++;
+            if (currentQuestionIndex < currentQuestions.length) loadQuestion();
+            else showResults();
+        }
+
+        function showResults() {
+            document.getElementById("quiz-screen").style.display = "none";
+            document.getElementById("result-screen").style.display = "block";
+            
+            document.getElementById("res-name").innerText = currentUser.name;
+            document.getElementById("res-score").innerText = score;
+            document.getElementById("res-total").innerText = currentQuestions.length;
+            
+            saveToGoogleSheet();
+        }
+
+        function saveToGoogleSheet() {
+            if (GOOGLE_SCRIPT_URL === "येथे_लिंक_पेस्ट_करा") {
+                document.getElementById("saving-msg").innerText = "कृपया HTML फाईलमध्ये Google Script URL टाका.";
+                generateCertificateCanvas();
+                return;
+            }
+
+            let formData = new URLSearchParams();
+            formData.append("Name", currentUser.name);
+            formData.append("Mobile", currentUser.mobile);
+            formData.append("Email", currentUser.email);
+            formData.append("Role", currentUser.role);
+            formData.append("Score", score + "/" + currentQuestions.length);
+
+            fetch(GOOGLE_SCRIPT_URL, { method: "POST", body: formData })
+            .then(res => res.text())
+            .then(data => {
+                document.getElementById("saving-msg").style.color = "green";
+                document.getElementById("saving-msg").innerText = "✓ माहिती यशस्वीरीत्या सेव्ह झाली!";
+                generateCertificateCanvas();
+            }).catch(err => {
+                document.getElementById("saving-msg").innerText = "माहिती सेव्ह करताना त्रुटी आली. कृपया इंटरनेट तपासा.";
+                generateCertificateCanvas();
+            });
+        }
+
+        function generateCertificateCanvas() {
+            const canvas = document.getElementById('cert-canvas');
+            const ctx = canvas.getContext('2d');
+            const logo = document.getElementById('paris-logo');
+            
+            // Background
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Borders
+            ctx.strokeStyle = "#2e7d32";
+            ctx.lineWidth = 10;
+            ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+            ctx.strokeStyle = "#81c784";
+            ctx.lineWidth = 3;
+            ctx.strokeRect(25, 25, canvas.width - 50, canvas.height - 50);
+
+            // Draw Logo (Top Left)
+            if(logo.complete && logo.naturalHeight !== 0) {
+                ctx.drawImage(logo, 50, 40, 120, 120);
+            }
+
+            // Title
+            ctx.fillStyle = "#1b5e20";
+            ctx.font = "bold 32px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("Certificate of Participation", canvas.width/2, 90);
+            
+            ctx.fillStyle = "#333";
+            ctx.font = "20px sans-serif";
+            ctx.fillText("जागतिक मानसिक आरोग्य दिन २०२६", canvas.width/2, 130);
+            
+            ctx.fillStyle = "#d32f2f";
+            ctx.font = "italic 18px sans-serif";
+            ctx.fillText("थीम: खरे अनुभव, खरे आवाज: खऱ्या बदलासाठी", canvas.width/2, 160);
+            
+            ctx.fillStyle = "#333";
+            ctx.font = "20px sans-serif";
+            ctx.fillText("प्रमाणित करण्यात येते की,", canvas.width/2, 230);
+            
+            ctx.fillStyle = "#2e7d32";
+            ctx.font = "bold 40px sans-serif";
+            ctx.fillText(currentUser.name, canvas.width/2, 280);
+            
+            ctx.beginPath();
+            ctx.moveTo(canvas.width/2 - 200, 295);
+            ctx.lineTo(canvas.width/2 + 200, 295);
+            ctx.strokeStyle = "#2e7d32";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            ctx.fillStyle = "#333";
+            ctx.font = "18px sans-serif";
+            ctx.fillText(`यांनी '${currentUser.role}' गटांतर्गत मानसिक आरोग्य सराव पूर्ण करून`, canvas.width/2, 340);
+            ctx.fillText(`${score}/${currentQuestions.length} गुण मिळवले आहेत.`, canvas.width/2, 370);
+
+            // Signatures
+            ctx.textAlign = "left";
+            
+            // Signature text (Cursive, 'A' and 'P' capital)
+            ctx.fillStyle = "#000000";
+            ctx.font = "italic 32px 'Brush Script MT', 'Lucida Handwriting', cursive";
+            ctx.fillText("Ajit Patil", 120, 470);
+            
+            ctx.fillStyle = "#333";
+            ctx.font = "bold 16px sans-serif";
+            ctx.fillText("डॉ. अजित पाटील", 120, 500);
+            ctx.font = "14px sans-serif";
+            ctx.fillText("मानसतज्ज्ञ, अध्यक्ष,", 120, 520);
+            ctx.fillText("PARIS Foundation", 120, 540);
+            
+            // Date
+            let today = new Date().toLocaleDateString('en-GB');
+            ctx.textAlign = "center";
+            ctx.font = "18px sans-serif";
+            ctx.fillText(today, 650, 470);
+            ctx.beginPath();
+            ctx.moveTo(580, 480);
+            ctx.lineTo(720, 480);
+            ctx.stroke();
+            ctx.fillText("Date", 650, 500);
+            
+            document.getElementById("cert-btn").style.display = "inline-block";
+        }
+        
+        function downloadCertificate() {
+            const canvas = document.getElementById('cert-canvas');
+            let link = document.createElement('a');
+            link.download = `Certificate_${currentUser.name}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        }
+    </script>
+</body>
+</html>
